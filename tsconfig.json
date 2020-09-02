@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "moduleResolution": "node",
+    "module": "ES2020",
+    "target": "es5",
+    "jsx": "react",
+    "allowJs": true,
+    "lib": ["ES2016", "DOM", "ES5"],
+    "sourceMap": true,
+    "declaration": true
+  },
+  "include": [
+    "./src_ts/**/*"
+  ]
+}

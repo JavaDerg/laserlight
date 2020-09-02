@@ -2,5 +2,11 @@
 .idea/
 
 ### Rust ###
+pkg/
 target/
 Cargo.lock
+
+### Node ###
+node_modules/
+dist/
+package-lock.json
