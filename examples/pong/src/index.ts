@@ -1,3 +1,7 @@
 import * as laser from 'laserlight/src_ts/index';
 
-laser.createGameCanvas();
+(async () => {
+    await laser.init();
+    laser.fancyUpDocument();
+    laser.createGameCanvas();
+})();

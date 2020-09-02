@@ -14,6 +14,7 @@ module.exports = ['source-map'].map(devtool => ({
     devtool,
     optimization: {
         runtimeChunk: true,
+        minimize: false,
     },
     plugins: [
         new DeclarationBundlerPlugin({
