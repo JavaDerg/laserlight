@@ -1,11 +1,11 @@
-export async function init() {
+export async function init(game_name: string) {
     window.onbeforeunload = lockEvent;
 
     const WASM = await import('wasm-laserlight');
 
-    console.log(typeof WASM, WASM);
-
-    await WASM.new_engine_builder();
+    let eb = await WASM.new_engine_builder(game_name);
+    let ng = WASM.build_engine(eb);
+    WASM.run_engine(ng);
 }
 
 export function fancyUpDocument(splashMsg: string = "LaserLight is preparing..."): void {
@@ -31,20 +31,6 @@ export function fancyUpDocument(splashMsg: string = "LaserLight is preparing..."
     document.body.appendChild(div);
 }
 
-export function createGameCanvas(): HTMLCanvasElement {
-    const canvas = document.createElement('canvas');
-    canvas.setAttribute('style', `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-    `);
-    document.body.appendChild(canvas);
-
-    return canvas;
-}
-
 let lockEvent = function(): string|undefined {
     return undefined;
 };
@@ -56,5 +42,4 @@ export function lockNavigation(lock: boolean = true) {
     } : function() {
         return undefined;
     };
-
 }
