@@ -22,6 +22,11 @@ features = [
     "Window",
     "Document",
     "HtmlCanvasElement",
+    "WebGlBuffer",
+    "WebGlRenderingContext",
+    "WebGlProgram",
+    "WebGlShader",
+    "HtmlCanvasElement",
 ]
 
 [profile.release]

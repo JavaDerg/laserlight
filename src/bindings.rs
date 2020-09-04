@@ -9,11 +9,6 @@ pub fn new_engine_builder(game_name: String) -> EngineBuilder {
 }
 
 #[wasm_bindgen]
-pub fn build_engine(builder: EngineBuilder) -> Engine {
-    builder.build()
-}
-
-#[wasm_bindgen]
-pub fn run_engine(engine: &mut Engine) -> Result<(), JsValue> {
-    engine.run().map_err(|err| err.into())
+pub fn start_engine(builder: EngineBuilder) ->  Result<Engine, JsValue> {
+    builder.run().map_err(|err| err.into())
 }

@@ -4,8 +4,7 @@ export async function init(game_name: string) {
     const WASM = await import('wasm-laserlight');
 
     let eb = await WASM.new_engine_builder(game_name);
-    let ng = WASM.build_engine(eb);
-    WASM.run_engine(ng);
+    let ng = WASM.start_engine(eb);
 }
 
 export function fancyUpDocument(splashMsg: string = "LaserLight is preparing..."): void {

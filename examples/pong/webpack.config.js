@@ -8,6 +8,7 @@ module.exports = {
         filename: 'bundle.js',
         path: path.resolve(__dirname, 'dist'),
     },
+    mode: process.env.MODE || 'production',
     devtool: 'inline-source-map',
     devServer: {
         contentBase: './dist',
