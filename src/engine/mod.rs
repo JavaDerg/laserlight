@@ -9,6 +9,7 @@ use winit::window::Window;
 
 pub mod builder;
 mod render;
+mod resource;
 
 #[wasm_bindgen]
 #[derive(Clone)]
@@ -46,7 +47,13 @@ impl Engine {
                     event: WindowEvent::CloseRequested,
                     window_id,
                 } if window_id == window.id() => *control_flow = ControlFlow::Exit,
-                Event::MainEventsCleared => window.request_redraw(),
+                Event::MainEventsCleared => {
+                    // TODO: run game (js) update
+                    if let Err(err) = renderer.update() {
+                        // TODO: handle error
+                    }
+                    window.request_redraw();
+                },
                 Event::RedrawRequested(window_id) if window_id == window.id() => renderer.render(),
                 _ => (),
             }
