@@ -8,15 +8,17 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-wasm-bindgen = "0.2.63"
-wasm-bindgen-futures = "0.4.17"
-winit = { version = "0.22.2", features = ["web-sys"] }
-js-sys = "0.3.44"
-log = "0.4.11"
-console_log = "0.2.0"
-console_error_panic_hook = "0.1.6"
-nalgebra = "0.22.0"
-crossbeam-queue = "0.2.3"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+winit = { version = "0.22", features = ["web-sys"] }
+js-sys = "0.3"
+log = "0.4"
+console_log = "0.2"
+console_error_panic_hook = "0.1"
+nalgebra = "0.22"
+crossbeam-queue = "0.2"
+instant = { version = "0.1", features = [ "wasm-bindgen", "now" ] }
+futures-task = "0.3"
 
 [dependencies.web-sys]
 version = "0.3.44"
