@@ -52,7 +52,7 @@ impl Engine {
                 } if window_id == window.id() => *control_flow = ControlFlow::Exit,
                 Event::MainEventsCleared => {
                     // TODO: run game (js) update
-                    rt.step_min_time(Duration::new(0, 1_000_000)); // 1ms
+                    rt.step_min_time(Duration::from_millis(1));
                     if let Err(err) = renderer.update() {
                         log::error!("{}", err);
                         // TODO: check if error is recoverable
