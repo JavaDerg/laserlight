@@ -6,13 +6,11 @@ use std::time::Duration;
 use std::pin::Pin;
 use futures_task::{ArcWake, Waker};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::task::Context;
-use wasm_bindgen::__rt::core::task::Poll;
-use wasm_bindgen::__rt::std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::task::{Context, Poll};
 
 pub struct AsyncSteppingRuntime {
-    tasks: VecDeque<Mutex<impl Future<Output = ()> + 'static>>,
+    tasks: VecDeque<Box<Mutex<dyn Future<Output = ()> + 'static + Unpin>>>,
     waker: Waker,
     indicator: Arc<AtomicBool>,
 }
@@ -36,8 +34,8 @@ impl AsyncSteppingRuntime {
         }
     }
 
-    pub fn spawn<F>(&mut self, future: impl Future<Output = ()> + 'static) {
-        let mutex = Mutex::new(future);
+    pub fn spawn<F>(&mut self, future: impl Future<Output = ()> + 'static + Unpin) {
+        let mutex = Box::new(Mutex::new(future));
         self.tasks.push_back(mutex);
         self.indicator.store(true, Ordering::Release);
     }
@@ -71,7 +69,7 @@ impl AsyncSteppingRuntime {
             if match self.tasks.get(i) {
                 Some(future) =>
                     if let Ok(pin) = future.lock() {
-                        self.poll(*pin)
+                        self.poll(Pin::new(&mut *pin))
                     } else {
                         false
                     },
@@ -101,3 +99,5 @@ impl ArcWake for LocalWaker {
         arc_self.0.store(true, Ordering::Release);
     }
 }
+
+// https://rust-lang.github.io/async-book/02_execution/02_future.html
