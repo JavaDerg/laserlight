@@ -106,3 +106,5 @@ impl ArcWake for LocalWaker {
         arc_self.0.store(true, Ordering::Release);
     }
 }
+
+// https://rust-lang.github.io/async-book/02_execution/02_future.html
