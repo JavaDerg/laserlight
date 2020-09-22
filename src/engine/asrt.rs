@@ -1,18 +1,16 @@
 use instant::Instant;
+use futures_task::{ArcWake, Waker};
 use std::collections::VecDeque;
 use std::future::Future;
-
 use std::time::Duration;
 use std::pin::Pin;
-use futures_task::{ArcWake, Waker};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::task::Context;
-use wasm_bindgen::__rt::core::task::Poll;
-use wasm_bindgen::__rt::std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::task::{Context, Poll};
+use std::ops::DerefMut;
 
 pub struct AsyncSteppingRuntime {
-    tasks: VecDeque<Mutex<impl Future<Output = ()> + 'static>>,
+    tasks: VecDeque<Mutex<Box<dyn Future<Output = ()> + 'static + Unpin>>>,
     waker: Waker,
     indicator: Arc<AtomicBool>,
 }
@@ -36,8 +34,10 @@ impl AsyncSteppingRuntime {
         }
     }
 
-    pub fn spawn<F>(&mut self, future: impl Future<Output = ()> + 'static) {
-        let mutex = Mutex::new(future);
+    pub fn spawn<F>(&mut self, future: F)
+        where F: Future<Output = ()> + 'static + Unpin
+    {
+        let mutex = Mutex::new(Box::new(future) as Box<dyn Future<Output = ()> + Unpin>);
         self.tasks.push_back(mutex);
         self.indicator.store(true, Ordering::Release);
     }
@@ -70,8 +70,13 @@ impl AsyncSteppingRuntime {
         for i in 0..self.tasks.len() {
             if match self.tasks.get(i) {
                 Some(future) =>
-                    if let Ok(pin) = future.lock() {
-                        self.poll(*pin)
+                    if let Ok(mut pin) = future.lock() {
+                        let pinned = unsafe { Pin::new_unchecked(pin.deref_mut()) } as Pin<&mut dyn Future<Output = ()>>;
+                        let mut ctx = Context::from_waker(&self.waker);
+                        match pinned.poll(&mut ctx) {
+                            Poll::Ready(_) => true,
+                            Poll::Pending => false,
+                        }
                     } else {
                         false
                     },
