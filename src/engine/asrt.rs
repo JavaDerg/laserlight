@@ -10,13 +10,14 @@ use std::task::{Context, Poll};
 use std::ops::DerefMut;
 
 pub struct AsyncSteppingRuntime {
-    tasks: VecDeque<Mutex<Box<dyn Future<Output = ()> + 'static + Unpin>>>,
+    tasks: VecDeque<Mutex<Pin<Box<dyn Future<Output = ()> + 'static>>>>,
     waker: Waker,
     indicator: Arc<AtomicBool>,
 }
 
 struct LocalWaker(Arc<AtomicBool>);
 
+#[derive(Debug)]
 pub enum StepResult {
     NoActionTake,
     PolledSome,
@@ -35,9 +36,9 @@ impl AsyncSteppingRuntime {
     }
 
     pub fn spawn<F>(&mut self, future: F)
-        where F: Future<Output = ()> + 'static + Unpin
+        where F: Future<Output = ()> + 'static
     {
-        let mutex = Mutex::new(Box::new(future) as Box<dyn Future<Output = ()> + Unpin>);
+        let mutex = Mutex::new(Box::pin(future) as Pin<Box<dyn Future<Output = ()>>>);
         self.tasks.push_back(mutex);
         self.indicator.store(true, Ordering::Release);
     }
