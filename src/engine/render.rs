@@ -1,5 +1,6 @@
+use crate::engine::asrt;
 use crate::engine::resource::PendingLoad;
-use crossbeam_queue::SegQueue;
+use flume::Receiver;
 use web_sys::WebGlRenderingContext;
 
 pub struct Renderer {
@@ -8,7 +9,7 @@ pub struct Renderer {
 
 struct Inner {
     pub ctx: WebGlRenderingContext,
-    pub resource_queue: SegQueue<PendingLoad>,
+    pub resource_queue: (flume::Sender<PendingLoad>, Receiver<PendingLoad>),
 }
 
 impl Renderer {
@@ -16,13 +17,13 @@ impl Renderer {
         Self {
             inner: Inner {
                 ctx,
-                resource_queue: SegQueue::new(),
+                resource_queue: flume::channel(),
             },
         }
     }
 
-    pub fn update(&self) -> Result<(), crate::err::EngineError> {
-        while let Ok(_item) = self.inner.resource_queue.pop() {}
+    pub fn update(&self, handle: &asrt::Handle) -> Result<(), crate::err::EngineError> {
+        self.inner.resource_queue.1.try_iter().for_each(|_| ());
         Ok(())
     }
 

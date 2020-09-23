@@ -1,5 +1,4 @@
-use std::fmt::Display;
-use wasm_bindgen::__rt::core::fmt::Formatter;
+use std::fmt::{Display, Formatter};
 use wasm_bindgen::prelude::*;
 
 #[derive(Debug)]
@@ -7,6 +6,7 @@ pub enum InnerError {
     None,
     OsError(winit::error::OsError),
     JsValue(wasm_bindgen::JsValue),
+    NoRuntime,
 }
 
 #[wasm_bindgen]

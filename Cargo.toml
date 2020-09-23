@@ -16,7 +16,7 @@ log = "0.4"
 console_log = "0.2"
 console_error_panic_hook = "0.1"
 nalgebra = "0.22"
-crossbeam-queue = "0.2"
+flume = "0.2"
 instant = { version = "0.1", features = [ "wasm-bindgen", "now" ] }
 futures-task = "0.3"
 pin-utils = "0.1"
