@@ -13,7 +13,7 @@ pub struct Task(Arc<Inner>);
 
 struct Inner {
     inner: Mutex<Option<Pin<Box<dyn Future<Output = ()> + 'static + Send>>>>,
-    completed: AtomicBool,
+    complete: AtomicBool,
     ready: AtomicBool,
 }
 
@@ -39,7 +39,7 @@ impl Task {
             inner: Mutex::new(Some(
                 Box::pin(future) as Pin<Box<dyn Future<Output = ()> + Send>>
             )),
-            completed: AtomicBool::new(false),
+            complete: AtomicBool::new(false),
             ready: AtomicBool::new(true),
         });
         (Self(task.clone()), JoinHandle(task))
@@ -72,18 +72,21 @@ impl Task {
             Some(pin) => pin,
             None => {
                 log::error!("Tried to poll complete task, recovered!");
-                self.0.completed.store(true, Ordering::Release);
+                self.0.complete.store(true, Ordering::Release);
                 return TaskState::Complete;
             }
         };
-        match pin.as_mut().poll(&mut ctx) {
+        let result = match pin.as_mut().poll(&mut ctx) {
             Poll::Ready(()) => {
                 *lock = None;
-                self.0.completed.store(true, Ordering::Release);
+                self.0.complete.store(true, Ordering::Release);
                 TaskState::Complete
             }
             Poll::Pending => TaskState::NotReady,
-        }
+        };
+        opt = Some(pin);
+        swap(&mut *lock, &mut opt);
+        result
         // If anything gets added after this, drop `lock` first to prevent spending any overtime with the MutexGuard
     }
 }

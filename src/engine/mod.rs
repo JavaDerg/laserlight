@@ -20,17 +20,6 @@ mod resource;
 #[derive(Clone)]
 pub struct Engine {}
 
-struct ForeverFuture(fn() -> ());
-impl Future for ForeverFuture {
-    type Output = ();
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        self.0();
-        cx.waker().wake_by_ref();
-        Poll::Pending
-    }
-}
-
 impl Engine {
     pub(self) fn new() -> Self {
         Self {}
@@ -56,8 +45,6 @@ impl Engine {
         let mut rt = asrt::Runtime::new();
         let handle = rt.get_handle();
         let renderer = Renderer::new(context);
-
-        rt.spawn(ForeverFuture(|| log::warn!("Nice!")));
 
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Poll;
