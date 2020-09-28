@@ -35,5 +35,8 @@ features = [
     "HtmlCanvasElement",
 ]
 
+[build-dependencies]
+wasm-pack = "0.9.1"
+
 [profile.release]
 opt-level = "s"
