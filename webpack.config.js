@@ -1,6 +1,6 @@
 const path = require('path');
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
-const DeclarationBundlerPlugin = require('declaration-bundler-webpack-plugin');
+const DeclarationBundlerPlugin = require('@kushki/declaration-bundler-webpack-plugin');
 
 module.exports = ['source-map'].map(devtool => ({
     entry: './src_ts/index.ts',
