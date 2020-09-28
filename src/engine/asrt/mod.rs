@@ -3,6 +3,7 @@ mod task;
 use crate::engine::asrt::task::TaskState;
 use crate::err::EngineError;
 use instant::Instant;
+use std::any::Any;
 use std::collections::VecDeque;
 use std::future::Future;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -42,9 +43,10 @@ impl Runtime {
         }
     }
 
-    pub fn spawn<F>(&mut self, future: F) -> task::JoinHandle
+    pub fn spawn<F, T>(&mut self, future: F) -> task::JoinHandle<T>
     where
-        F: Future<Output = ()> + 'static + Send,
+        F: Future<Output = T> + 'static + Send,
+        T: Any + 'static + Send,
     {
         let (task, handle) = task::Task::new(future);
         self.tasks.push_back(task);
@@ -115,9 +117,10 @@ impl Runtime {
 }
 
 impl Handle {
-    pub fn spawn<F>(&mut self, future: F) -> Result<task::JoinHandle, EngineError>
+    pub fn spawn<F, T>(&mut self, future: F) -> Result<task::JoinHandle<T>, EngineError>
     where
-        F: Future<Output = ()> + 'static + Send,
+        F: Future<Output = T> + 'static + Send,
+        T: Any + 'static + Send,
     {
         let (task, handle) = task::Task::new(future);
         self.task_dispatcher.send(task)?;
