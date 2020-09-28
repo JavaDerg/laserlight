@@ -14,6 +14,7 @@ pub struct Task(Arc<Inner>);
 struct Inner {
     inner: Mutex<Option<Pin<Box<dyn Future<Output = ()> + 'static + Send>>>>,
     complete: AtomicBool,
+    working: AtomicBool,
     ready: AtomicBool,
 }
 
@@ -40,19 +41,20 @@ impl Task {
                 Box::pin(future) as Pin<Box<dyn Future<Output = ()> + Send>>
             )),
             complete: AtomicBool::new(false),
+            working: AtomicBool::new(false),
             ready: AtomicBool::new(true),
         });
         (Self(task.clone()), JoinHandle(task))
     }
 
     pub(super) fn poll(&self, handle: &super::Handle) -> TaskState {
-        if !self.0.ready.load(Ordering::Acquire) {
+        if self.0.working.load(Ordering: Acquire) || !self.0.ready.load(Ordering::Acquire) {
             return TaskState::NotReady;
         }
 
         let waker = futures_task::waker(Arc::new(TaskWaker(self.0.clone(), handle.clone())));
         let mut ctx = Context::from_waker(&waker);
-        self.0.ready.store(false, Ordering::Release);
+        self.0.ready.swap(false, Ordering::RelAqr);
         let mut lock = match self.0.inner.try_lock() {
             Ok(lock) => lock,
             Err(err) => match err {
@@ -66,9 +68,8 @@ impl Task {
                 }
             },
         };
-        let mut opt = None;
-        swap(&mut *lock, &mut opt);
-        let mut pin = match opt {
+
+        let mut pin = match lock.take() {
             Some(pin) => pin,
             None => {
                 log::error!("Tried to poll complete task, recovered!");
@@ -78,14 +79,12 @@ impl Task {
         };
         let result = match pin.as_mut().poll(&mut ctx) {
             Poll::Ready(()) => {
-                *lock = None;
                 self.0.complete.store(true, Ordering::Release);
                 TaskState::Complete
             }
             Poll::Pending => TaskState::NotReady,
         };
-        opt = Some(pin);
-        swap(&mut *lock, &mut opt);
+        *lock = Some(pin);
         result
         // If anything gets added after this, drop `lock` first to prevent spending any overtime with the MutexGuard
     }
