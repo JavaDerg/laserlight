@@ -1,0 +1,28 @@
+name: LaserLight CI
+on:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x, 14.x]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Installing Rust dependencies # add to cache later
+      run: rustup target install wasm32-unknown-unknown
+    - run: cargo install wasm-pack
+    - run: wasm-pack build --release -- --verbose
+    - name: Installing Node Dependencies
+      run: npm i
+    - name: Build
+      run: npx webpack
