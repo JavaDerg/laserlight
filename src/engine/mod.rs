@@ -69,6 +69,31 @@ impl Engine {
                         *control_flow = ControlFlow::Exit;
                     }
                 }
+                Event::WindowEvent { window_id, event } if window_id == window.id() => {
+                    match event {
+                        WindowEvent::Resized(_) => {}
+                        WindowEvent::Moved(_) => {}
+                        WindowEvent::CloseRequested => {}
+                        WindowEvent::Destroyed => {}
+                        WindowEvent::DroppedFile(_) => {}
+                        WindowEvent::HoveredFile(_) => {}
+                        WindowEvent::HoveredFileCancelled => {}
+                        WindowEvent::ReceivedCharacter(_) => {}
+                        WindowEvent::Focused(_) => {}
+                        WindowEvent::KeyboardInput { .. } => {}
+                        WindowEvent::ModifiersChanged(_) => {}
+                        WindowEvent::CursorMoved { .. } => {}
+                        WindowEvent::CursorEntered { .. } => {}
+                        WindowEvent::CursorLeft { .. } => {}
+                        WindowEvent::MouseWheel { .. } => {}
+                        WindowEvent::MouseInput { .. } => {}
+                        WindowEvent::TouchpadPressure { .. } => {}
+                        WindowEvent::AxisMotion { .. } => {}
+                        WindowEvent::Touch(_) => {}
+                        WindowEvent::ScaleFactorChanged { .. } => {}
+                        WindowEvent::ThemeChanged(_) => {}
+                    }
+                }
                 _ => (),
             }
         });

@@ -20,6 +20,7 @@ flume = "0.2"
 instant = { version = "0.1", features = [ "wasm-bindgen", "now" ] }
 futures-task = "0.3"
 pin-utils = "0.1"
+imgui = "0.5.0"
 
 [dependencies.web-sys]
 version = "0.3.44"
