@@ -1,16 +1,18 @@
-use crate::engine::render::Renderer;
 use crate::err::{EngineError, ErrorConverter};
 use builder::EngineBuilder;
-use std::future::Future;
+use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::time::Duration;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
+use wasm_bindgen::__rt::std::collections::VecDeque;
+use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
 
 mod asrt;
 pub mod builder;
+mod gameloop;
+mod meta;
 mod render;
 mod resource;
 
@@ -37,25 +39,42 @@ impl Engine {
         let context = canvas
             .get_context("webgl")?
             .unwrap()
-            .dyn_into::<WebGlRenderingContext>()
+            .dyn_into::<WebGl2RenderingContext>()
             .describe("Unable to obtain WebGL rendering context from canvas")?;
+
+        let mut imgui = imgui::Context::create();
+        let mut platform = WinitPlatform::init(&mut imgui);
+        let mut ui_queue = VecDeque::with_capacity(16);
+        platform.attach_window(imgui.io_mut(), &window, HiDpiMode::Default);
 
         let mut rt = asrt::Runtime::new();
         let handle = rt.get_handle();
-        let renderer = Renderer::new(context);
+        let mut meta = meta::EngineMeta::new();
+        let mut renderer = render::Renderer::new(context);
+        let mut gameloop = gameloop::GameLoop::new();
 
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Poll;
-
             match event {
+                Event::NewEvents(_) => {
+                    meta.update_delta();
+                    imgui.io_mut().update_delta_time(*meta.delta_dur())
+                }
                 Event::WindowEvent {
                     event: WindowEvent::CloseRequested,
                     window_id,
                 } if window_id == window.id() => *control_flow = ControlFlow::Exit,
                 Event::MainEventsCleared => {
-                    // TODO: run game (js) update
+                    meta.update();
+                    let queue = &mut ui_queue;
+                    gameloop.update(&meta, &mut |udc| queue.push_back(udc));
+                    if let Err(err) = platform.prepare_frame(imgui.io_mut(), &window) {
+                        log::error!("{}", err);
+                        // TODO: check if error is recoverable
+                        *control_flow = ControlFlow::Exit;
+                    }
                     rt.step_min_time(Duration::from_millis(1));
-                    if let Err(err) = renderer.update(&handle) {
+                    if let Err(err) = renderer.update(&meta, &handle) {
                         log::error!("{}", err);
                         // TODO: check if error is recoverable
                         *control_flow = ControlFlow::Exit;
@@ -63,38 +82,22 @@ impl Engine {
                     window.request_redraw();
                 }
                 Event::RedrawRequested(window_id) if window_id == window.id() => {
-                    if let Err(err) = renderer.render() {
+                    let mut ui = imgui.frame();
+                    platform.prepare_render(&ui, &window);
+                    while let Some(udc) = ui_queue.pop_front() {
+                        udc(&mut ui);
+                    }
+                    let draw_data = ui.render();
+                    if let Err(err) = renderer.render(draw_data) {
                         log::error!("{}", err);
                         // TODO: check if error is recoverable
                         *control_flow = ControlFlow::Exit;
                     }
                 }
-                Event::WindowEvent { window_id, event } if window_id == window.id() => {
-                    match event {
-                        WindowEvent::Resized(_) => {}
-                        WindowEvent::Moved(_) => {}
-                        WindowEvent::CloseRequested => {}
-                        WindowEvent::Destroyed => {}
-                        WindowEvent::DroppedFile(_) => {}
-                        WindowEvent::HoveredFile(_) => {}
-                        WindowEvent::HoveredFileCancelled => {}
-                        WindowEvent::ReceivedCharacter(_) => {}
-                        WindowEvent::Focused(_) => {}
-                        WindowEvent::KeyboardInput { .. } => {}
-                        WindowEvent::ModifiersChanged(_) => {}
-                        WindowEvent::CursorMoved { .. } => {}
-                        WindowEvent::CursorEntered { .. } => {}
-                        WindowEvent::CursorLeft { .. } => {}
-                        WindowEvent::MouseWheel { .. } => {}
-                        WindowEvent::MouseInput { .. } => {}
-                        WindowEvent::TouchpadPressure { .. } => {}
-                        WindowEvent::AxisMotion { .. } => {}
-                        WindowEvent::Touch(_) => {}
-                        WindowEvent::ScaleFactorChanged { .. } => {}
-                        WindowEvent::ThemeChanged(_) => {}
-                    }
+                event => {
+                    platform.handle_event(imgui.io_mut(), &window, &event);
+                    // TODO: Handle input events
                 }
-                _ => (),
             }
         });
     }
