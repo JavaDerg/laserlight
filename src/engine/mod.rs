@@ -4,7 +4,6 @@ use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::time::Duration;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use wasm_bindgen::__rt::std::collections::VecDeque;
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
@@ -44,7 +43,6 @@ impl Engine {
 
         let mut imgui = imgui::Context::create();
         let mut platform = WinitPlatform::init(&mut imgui);
-        let mut ui_queue = VecDeque::with_capacity(16);
         platform.attach_window(imgui.io_mut(), &window, HiDpiMode::Default);
 
         let mut rt = asrt::Runtime::new();
@@ -66,27 +64,28 @@ impl Engine {
                 } if window_id == window.id() => *control_flow = ControlFlow::Exit,
                 Event::MainEventsCleared => {
                     meta.update();
-                    let queue = &mut ui_queue;
-                    gameloop.update(&meta, &mut |udc| queue.push_back(udc));
+
+                    window.request_redraw();
+                }
+                Event::RedrawRequested(window_id) if window_id == window.id() => {
                     if let Err(err) = platform.prepare_frame(imgui.io_mut(), &window) {
                         log::error!("{}", err);
                         // TODO: check if error is recoverable
                         *control_flow = ControlFlow::Exit;
                     }
+
+                    let ui = imgui.frame();
+                    gameloop.update(&meta, &ui);
+
                     rt.step_min_time(Duration::from_millis(1));
+
                     if let Err(err) = renderer.update(&meta, &handle) {
                         log::error!("{}", err);
                         // TODO: check if error is recoverable
                         *control_flow = ControlFlow::Exit;
                     }
-                    window.request_redraw();
-                }
-                Event::RedrawRequested(window_id) if window_id == window.id() => {
-                    let mut ui = imgui.frame();
+
                     platform.prepare_render(&ui, &window);
-                    while let Some(udc) = ui_queue.pop_front() {
-                        udc(&mut ui);
-                    }
                     let draw_data = ui.render();
                     if let Err(err) = renderer.render(draw_data) {
                         log::error!("{}", err);

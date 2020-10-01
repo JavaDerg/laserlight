@@ -4,6 +4,24 @@ use flume::Receiver;
 use glow::HasContext;
 use web_sys::WebGl2RenderingContext;
 
+macro_rules! glc {
+    ($ctx:expr, $any:stmt) => {
+        unsafe {
+            #[cfg(debug_assertions)]
+            while $ctx.get_error() != glow::NO_ERROR {}
+            $any
+            #[cfg(debug_assertions)]
+            while match $ctx.get_error() {
+                glow::NO_ERROR => false,
+                err => {
+                    log::error!("[OpenGL Error] {}", err);
+                    true
+                }
+            } {}
+        }
+    };
+}
+
 pub struct Renderer {
     inner: Inner,
 }
@@ -35,12 +53,10 @@ impl Renderer {
     pub fn render(&mut self, imgui_draw: &imgui::DrawData) -> Result<(), crate::err::EngineError> {
         let ctx = &self.inner.ctx;
 
-        // TODO: imgui_draw
+        glc!(ctx, ctx.clear_color(0.1, 0.1, 0.1, 1.0));
+        glc!(ctx, ctx.clear(glow::COLOR_BUFFER_BIT));
 
-        unsafe {
-            ctx.clear_color(0.1, 0.1, 0.1, 1.0);
-            ctx.clear(glow::COLOR_BUFFER_BIT);
-        }
+        // https://github.com/ocornut/imgui/blob/7b1ab5b27586a3b297aac336d6a97873b11d4078/examples/imgui_impl_opengl3.cpp#L294
 
         Ok(())
     }
