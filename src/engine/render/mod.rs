@@ -1,9 +1,12 @@
+pub mod shader;
+
 use crate::engine::asrt;
 use crate::engine::resource::PendingLoad;
 use flume::Receiver;
 use glow::HasContext;
 use web_sys::WebGl2RenderingContext;
 
+#[macro_export]
 macro_rules! glc {
     ($ctx:expr, $any:stmt) => {
         unsafe {
