@@ -1,4 +1,5 @@
 pub mod shader;
+mod imgui_render;
 
 use crate::engine::asrt;
 use crate::engine::resource::PendingLoad;
@@ -8,11 +9,11 @@ use web_sys::WebGl2RenderingContext;
 
 #[macro_export]
 macro_rules! glc {
-    ($ctx:expr, $any:stmt) => {
+    ($ctx:expr, $any:expr) => {
         unsafe {
             #[cfg(debug_assertions)]
             while $ctx.get_error() != glow::NO_ERROR {}
-            $any
+            let out = $any;
             #[cfg(debug_assertions)]
             while match $ctx.get_error() {
                 glow::NO_ERROR => false,
@@ -21,6 +22,7 @@ macro_rules! glc {
                     true
                 }
             } {}
+            out
         }
     };
 }
