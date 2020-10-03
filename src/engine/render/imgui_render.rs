@@ -1,14 +1,14 @@
-#[macro_use]
-use super::shader;
+use crate::shader; // Macro
+use super::shader; // Module
 
 pub struct ImguiRender {
     shader: shader::ShaderProgram
 }
 
 impl ImguiRender {
-    pub fn new() -> Self {
+    pub fn new(ctx: &glow::Context) -> Self {
         Self {
-            shader: shader!("imgui")
+            shader: shader!("imgui").build(ctx).expect("Imgui shader failed to build")
         }
     }
 }

@@ -7,16 +7,20 @@ pub struct ShaderBuilder {
 }
 
 pub struct ShaderProgram {
-    vert: u32,
-    frag: u32,
-    program: u32,
+    vert: glow::WebShaderKey,
+    frag: glow::WebShaderKey,
+    program: glow::WebProgramKey,
 }
 
+#[macro_export]
 macro_rules! shader {
+    ($shader:literal) => {
+        shader!($shader, $shader)
+    };
     ($vert:literal, $frag:literal) => {
-        $self::ShaderBuilder::new(
-            include_str!(concat!($vert, ".vert")),
-            include_str!(concat!($frag, ".frag")),
+        $crate::engine::render::shader::ShaderBuilder::new(
+            include_str!(concat!("shader/", $vert, ".vert")),
+            include_str!(concat!("shader/", $frag, ".frag")),
         )
     };
 }
@@ -55,7 +59,7 @@ impl ShaderBuilder {
     }
 }
 
-fn sub_compile_shader(ctx: &glow::Context, shader_type: u32, src: &str) -> Result<u32, String> {
+fn sub_compile_shader(ctx: &glow::Context, shader_type: u32, src: &str) -> Result<glow::WebShaderKey, String> {
     let shader = glc!(ctx, ctx.create_shader(shader_type))?;
     glc!(ctx, ctx.shader_source(shader, src));
     glc!(ctx, ctx.compile_shader(shader));
