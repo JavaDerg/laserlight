@@ -49,8 +49,18 @@ impl ImguiRender {
 
     // https://github.com/ocornut/imgui/blob/7b1ab5b27586a3b297aac336d6a97873b11d4078/examples/imgui_impl_opengl3.cpp#L294
     pub fn draw(&self, ctx: &glow::Context, ui: imgui::Ui) {
+        let dd = ui.render();
+        let fbw = (dd.display_size[0] * dd.framebuffer_scale[0]) as i32;
+        let fbh = (dd.display_size[1] * dd.framebuffer_scale[1]) as i32;
+        if fbw <= 0 || fbh <= 0 {
+            return;
+        }
 
-        todo!()
+        let restore = capture(ctx);
+
+        todo!();
+
+        restore(ctx);
     }
 
 
@@ -59,5 +69,15 @@ impl ImguiRender {
         glc!(ctx, ctx.delete_buffer(self.elements));
         glc!(ctx, ctx.delete_texture(self.tex));
         self.shader.drop(ctx);
+    }
+}
+
+pub fn capture(ctx: &glow::Context) -> fn(&glow::Context) -> () {
+    // Capture gl state
+    todo!();
+
+    // Restore gl state
+    move |ctx| {
+        todo!()
     }
 }
