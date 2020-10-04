@@ -74,6 +74,8 @@ impl Engine {
                         *control_flow = ControlFlow::Exit;
                     }
 
+                    renderer.pre_render(&mut imgui);
+
                     let ui = imgui.frame();
                     gameloop.update(&meta, &ui);
 
@@ -86,8 +88,7 @@ impl Engine {
                     }
 
                     platform.prepare_render(&ui, &window);
-                    let draw_data = ui.render();
-                    if let Err(err) = renderer.render(draw_data) {
+                    if let Err(err) = renderer.render(ui) {
                         log::error!("{}", err);
                         // TODO: check if error is recoverable
                         *control_flow = ControlFlow::Exit;

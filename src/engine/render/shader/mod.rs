@@ -1,5 +1,4 @@
 use crate::glc;
-use glow::HasContext;
 
 pub struct ShaderBuilder {
     vert_src: String,
@@ -9,7 +8,7 @@ pub struct ShaderBuilder {
 pub struct ShaderProgram {
     vert: glow::WebShaderKey,
     frag: glow::WebShaderKey,
-    program: glow::WebProgramKey,
+    pub program: glow::WebProgramKey,
 }
 
 #[macro_export]
@@ -56,6 +55,16 @@ impl ShaderBuilder {
             frag,
             program,
         })
+    }
+}
+
+impl ShaderProgram {
+    pub fn drop(self, ctx: &glow::Context) {
+        glc!(ctx, ctx.detach_shader(self.program, self.vert));
+        glc!(ctx, ctx.detach_shader(self.program, self.frag));
+        glc!(ctx, ctx.delete_shader(self.vert));
+        glc!(ctx, ctx.delete_shader(self.frag));
+        glc!(ctx, ctx.delete_program(self.program));
     }
 }
 

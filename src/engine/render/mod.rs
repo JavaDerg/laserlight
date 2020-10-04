@@ -4,13 +4,14 @@ mod imgui_render;
 use crate::engine::asrt;
 use crate::engine::resource::PendingLoad;
 use flume::Receiver;
-use glow::HasContext;
 use web_sys::WebGl2RenderingContext;
 
 #[macro_export]
 macro_rules! glc {
     ($ctx:expr, $any:expr) => {
         unsafe {
+            #[allow(unused_imports)]
+            use glow::HasContext;
             #[cfg(debug_assertions)]
             while $ctx.get_error() != glow::NO_ERROR {}
             let out = $any;
@@ -34,6 +35,7 @@ pub struct Renderer {
 struct Inner {
     pub ctx: glow::Context,
     pub resource_queue: (flume::Sender<PendingLoad>, Receiver<PendingLoad>),
+    imgui_render: Option<imgui_render::ImguiRender>
 }
 
 impl Renderer {
@@ -42,6 +44,7 @@ impl Renderer {
             inner: Inner {
                 ctx: glow::Context::from_webgl2_context(ctx),
                 resource_queue: flume::channel(),
+                imgui_render: None,
             },
         }
     }
@@ -55,13 +58,20 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn render(&mut self, imgui_draw: &imgui::DrawData) -> Result<(), crate::err::EngineError> {
+    #[inline]
+    pub fn pre_render(&mut self, imctx: &mut imgui::Context) {
+        if self.inner.imgui_render.is_none() {
+            self.inner.imgui_render = Some(imgui_render::ImguiRender::new(&self.inner.ctx, imctx));
+        }
+    }
+
+    pub fn render(&mut self, mut ui: imgui::Ui) -> Result<(), crate::err::EngineError> {
         let ctx = &self.inner.ctx;
 
         glc!(ctx, ctx.clear_color(0.1, 0.1, 0.1, 1.0));
         glc!(ctx, ctx.clear(glow::COLOR_BUFFER_BIT));
 
-        // https://github.com/ocornut/imgui/blob/7b1ab5b27586a3b297aac336d6a97873b11d4078/examples/imgui_impl_opengl3.cpp#L294
+        self.inner.imgui_render.as_ref().expect("you need to call pre_render").draw(ctx, ui);
 
         Ok(())
     }
