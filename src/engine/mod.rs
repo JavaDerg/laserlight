@@ -4,7 +4,7 @@ use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::time::Duration;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
+use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
 
@@ -38,7 +38,7 @@ impl Engine {
         let context = canvas
             .get_context("webgl")?
             .unwrap()
-            .dyn_into::<WebGl2RenderingContext>()
+            .dyn_into::<WebGlRenderingContext>()
             .describe("Unable to obtain WebGL rendering context from canvas")?;
 
         let mut imgui = imgui::Context::create();

@@ -20,7 +20,6 @@ flume = "0.2"
 instant = { version = "0.1", features = [ "wasm-bindgen", "now" ] }
 futures-task = "0.3"
 pin-utils = "0.1"
-glow = { version = "0.6", features = ["web-sys"] }
 imgui = { version = "0.5", features = ["wasm"] }
 imgui-winit-support = "0.5"
 
@@ -32,7 +31,7 @@ features = [
     "Document",
     "HtmlCanvasElement",
     "WebGlBuffer",
-    "WebGl2RenderingContext",
+    "WebGlRenderingContext",
     "WebGlProgram",
     "WebGlShader",
     "HtmlCanvasElement",

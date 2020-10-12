@@ -1,4 +1,6 @@
+use super::gl_consts as glcl;
 use crate::glc;
+use web_sys::WebGlRenderingContext;
 
 pub struct ShaderBuilder {
     vert_src: String,
@@ -6,9 +8,9 @@ pub struct ShaderBuilder {
 }
 
 pub struct ShaderProgram {
-    vert: glow::WebShaderKey,
-    frag: glow::WebShaderKey,
-    pub program: glow::WebProgramKey,
+    vert: u32,
+    frag: u32,
+    pub program: u32,
 }
 
 #[macro_export]
@@ -36,9 +38,9 @@ impl ShaderBuilder {
         }
     }
 
-    pub fn build(&self, ctx: &glow::Context) -> Result<ShaderProgram, String> {
-        let vert = sub_compile_shader(ctx, glow::VERTEX_SHADER, self.vert_src.as_str())?;
-        let frag = sub_compile_shader(ctx, glow::FRAGMENT_SHADER, self.frag_src.as_str())?;
+    pub fn build(&self, ctx: &WebGlRenderingContext) -> Result<ShaderProgram, String> {
+        let vert = sub_compile_shader(ctx, glcl::VERTEX_SHADER, self.vert_src.as_str())?;
+        let frag = sub_compile_shader(ctx, glcl::FRAGMENT_SHADER, self.frag_src.as_str())?;
         let program = glc!(ctx, ctx.create_program()).expect("Unable to create Program");
         glc!(ctx, ctx.attach_shader(program, vert));
         glc!(ctx, ctx.attach_shader(program, frag));
@@ -59,7 +61,7 @@ impl ShaderBuilder {
 }
 
 impl ShaderProgram {
-    pub fn drop(self, ctx: &glow::Context) {
+    pub fn drop(self, ctx: &WebGlRenderingContext) {
         glc!(ctx, ctx.detach_shader(self.program, self.vert));
         glc!(ctx, ctx.detach_shader(self.program, self.frag));
         glc!(ctx, ctx.delete_shader(self.vert));
@@ -68,7 +70,11 @@ impl ShaderProgram {
     }
 }
 
-fn sub_compile_shader(ctx: &glow::Context, shader_type: u32, src: &str) -> Result<glow::WebShaderKey, String> {
+fn sub_compile_shader(
+    ctx: &WebGlRenderingContext,
+    shader_type: u32,
+    src: &str,
+) -> Result<u32, String> {
     let shader = glc!(ctx, ctx.create_shader(shader_type))?;
     glc!(ctx, ctx.shader_source(shader, src));
     glc!(ctx, ctx.compile_shader(shader));
@@ -81,4 +87,3 @@ fn sub_compile_shader(ctx: &glow::Context, shader_type: u32, src: &str) -> Resul
     }
     Ok(shader)
 }
-

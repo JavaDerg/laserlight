@@ -1,23 +1,22 @@
-pub mod shader;
+pub mod gl_consts;
 mod imgui_render;
+pub mod shader;
 
 use crate::engine::asrt;
 use crate::engine::resource::PendingLoad;
 use flume::Receiver;
-use web_sys::WebGl2RenderingContext;
+use web_sys::WebGlRenderingContext;
 
 #[macro_export]
 macro_rules! glc {
     ($ctx:expr, $any:expr) => {
         unsafe {
-            #[allow(unused_imports)]
-            use glow::HasContext;
             #[cfg(debug_assertions)]
-            while $ctx.get_error() != glow::NO_ERROR {}
+            while $ctx.get_error() != $crate::engine::render::gl_consts::NO_ERROR {}
             let out = $any;
             #[cfg(debug_assertions)]
             while match $ctx.get_error() {
-                glow::NO_ERROR => false,
+                $crate::engine::render::gl_consts::NO_ERROR => false,
                 err => {
                     log::error!("[OpenGL Error] {}", err);
                     true
@@ -33,16 +32,16 @@ pub struct Renderer {
 }
 
 struct Inner {
-    pub ctx: glow::Context,
+    pub ctx: WebGlRenderingContext,
     pub resource_queue: (flume::Sender<PendingLoad>, Receiver<PendingLoad>),
-    imgui_render: Option<imgui_render::ImguiRender>
+    imgui_render: Option<imgui_render::ImguiRender>,
 }
 
 impl Renderer {
-    pub fn new(ctx: WebGl2RenderingContext) -> Self {
+    pub fn new(ctx: WebGlRenderingContext) -> Self {
         Self {
             inner: Inner {
-                ctx: glow::Context::from_webgl2_context(ctx),
+                ctx,
                 resource_queue: flume::channel(),
                 imgui_render: None,
             },
@@ -69,9 +68,13 @@ impl Renderer {
         let ctx = &self.inner.ctx;
 
         glc!(ctx, ctx.clear_color(0.1, 0.1, 0.1, 1.0));
-        glc!(ctx, ctx.clear(glow::COLOR_BUFFER_BIT));
+        glc!(ctx, ctx.clear(gl_consts::COLOR_BUFFER_BIT));
 
-        self.inner.imgui_render.as_ref().expect("you need to call pre_render").draw(ctx, ui);
+        self.inner
+            .imgui_render
+            .as_ref()
+            .expect("you need to call pre_render")
+            .draw(ctx, ui);
 
         Ok(())
     }
